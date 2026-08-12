@@ -1,0 +1,63 @@
+#!/usr/bin/env python
+"""
+Initialize a PlatformIO project.
+This only needs to be done once per build environment.
+"""
+from os import path
+import argparse
+import subprocess
+
+DEFAULT_PROJECT_DIR = "~/catkin_ws/src/openag_brain/firmware"
+
+parser = argparse.ArgumentParser(
+    description="""
+Initializes a PlatformIO project. By default, initializes project in the
+firmware directory, where all the firmware sourcecode exists for this project.
+    """,
+)
+parser.add_argument(
+    "-b", "--board",
+    help="The board to use for compilation. Defaults to megaatmega2560 "
+        "(Arduino Mega 2560)",
+    default="megaatmega2560"
+)
+parser.add_argument(
+    "-d", "--project_dir",
+    help='The directory in which to initialize the PlatformIO project. '
+        'Defaults to "{}"'.format(DEFAULT_PROJECT_DIR),
+    default=DEFAULT_PROJECT_DIR
+)
+
+
+def init(project_dir, board):
+    """
+    Initialize a PlatformIO project.
+    Just a thin wrapper around `platformio init` that provides some defaults
+    and is idempotent.
+    """
+    try:
+        init = subprocess.Popen(
+            ["platformio", "init", "-b", board],
+            stdin=subprocess.PIPE,
+            cwd=project_dir
+        )
+        init.communicate("y\n")
+    except OSError as e:
+        raise RuntimeError("PlatformIO is not installed")
+    if init.returncode != 0:
+        raise RuntimeError(
+            "Failed to initialize PlatformIO project"
+        )
+
+
+def main():
+    args = parser.parse_args()
+    project_dir = path.normpath(path.expanduser(args.project_dir))
+    init(
+        project_dir=project_dir,
+        board=args.board
+    )
+
+
+if __name__ == '__main__':
+    main()

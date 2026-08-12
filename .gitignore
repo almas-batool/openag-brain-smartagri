@@ -1,0 +1,19 @@
+# Mac OS
+**.DS_Store
+
+# PlatformIO firmware-specific stuff
+**.pioenvs
+
+# Python
+*.swp
+*.pyc
+*.egg-info
+__pycache__
+.idea
+
+# Docs
+doc/html
+doc/manifest.yaml
+doc/_build
+.cache/
+data/simulation_log.csv

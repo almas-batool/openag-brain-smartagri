@@ -1,0 +1,66 @@
+#!/usr/bin/env python
+"""
+This script is used to:
+
+- Build a hex file using ``platformio``
+- (Optionally) flash that hex file to the Arduino.
+
+For information on how to use it::
+
+    ./scripts/firmware -h
+
+Where to find things:
+
+- Individual firmware libraries are in ``firmware/lib``.
+- The sketch is placed in ``firmware/src/src.ino`` by default.
+- The compiled ``.hex`` file is placed in
+  ``firmware/.pioenvs/megaatmega2560/firmware.hex``. This is the default
+  location in which platformio places hex files.
+"""
+import argparse
+import subprocess
+from os import path, makedirs
+
+# Relative path (from script execution) to the ROS package root.
+DEFAULT_PROJECT_DIR = "~/catkin_ws/src/openag_brain/firmware"
+
+def build_firmware(project_dir, target):
+    cmd = (
+        ("pio", "run", "--target", target)
+        if target else
+        ("pio", "run")
+    )
+    return subprocess.call(cmd, cwd=project_dir)
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="""
+        Tools for dealing with firmware modules.
+        """,
+    )
+    parser.add_argument(
+        "-t", "--target",
+        help="PlatformIO target (e.g. upload). You can omit this if you just "
+            "want to generate a .hex file. If you want to flash the Arduino "
+            "specify \"upload\"."
+    )
+    parser.add_argument(
+        "--status_update_interval",
+        help="Minimum interval between driver status updates, in seconds. "
+            "(Default 5)",
+        default=5
+    )
+    parser.add_argument(
+        "-d", "--project_dir",
+        help="the path to the platformio project dir "
+            "(Default {}".format(DEFAULT_PROJECT_DIR),
+        default=DEFAULT_PROJECT_DIR
+    )
+
+    args = parser.parse_args()
+    # Expand project dir path
+    project_dir = path.normpath(path.expanduser(args.project_dir))
+    build_firmware(
+        project_dir=project_dir,
+        target=args.target or None
+    )

@@ -1,0 +1,74 @@
+#!/usr/bin/env python
+import os
+import time
+import atexit
+import argparse
+import subprocess
+
+from openag_lib.config import config 
+from openag_lib.db_bootstrap.db_init import db_init 
+
+modules = None
+
+@atexit.register
+def kill_children():
+    if modules is not None:
+        modules.terminate()
+        modules.wait()
+
+def spawn_modules(launch_file, screen=False):
+    roslaunch_command = ["roslaunch", "openag_brain", launch_file]
+    if screen:
+        roslaunch_command.append("--screen")
+    return subprocess.Popen(roslaunch_command)
+
+
+#------------------------------------------------------------------------------
+def main(launch_file, api_server, db_server, screen):
+    # Initialize the database
+    print "Initializing the database"
+    db_server = db_server or config["local_server"]["url"] or \
+        "http://localhost:5984"
+    api_server = api_server or "http://localhost:5000"
+    db_init(db_server, api_server)
+
+    global modules
+    print "Spawning software modules"
+    modules = spawn_modules(launch_file, screen)
+    modules.wait()
+
+
+#------------------------------------------------------------------------------
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(
+        description="""
+Runs the entire software project. In particular, it initializes the
+database (init_db), optionally applies a fixture to the database
+(load_fixture), generates a roslaunch file for the software modules
+(update_launch), runs the roslaunch file, and respawns if there is a change to
+the configuration of the software modules
+        """,
+    )
+    parser.add_argument(
+        "launch_file",
+        help="The path to the .launch file to use"
+    )
+    parser.add_argument(
+        "-A", "--api_server", help="Address of the API from the api module"
+    )
+    parser.add_argument(
+        "-D", "--db_server", help="Address of the database server"
+    )
+    parser.add_argument(
+        "--screen", action="store_true",
+        help="""
+Passes the --screen flag to the roslaunch call, which forces all node output to
+the screen. Useful for debugging.
+""")
+    vals = parser.parse_args()
+    main(
+        launch_file=vals.launch_file,
+        api_server=vals.api_server, 
+        db_server=vals.db_server,
+        screen=vals.screen
+    )

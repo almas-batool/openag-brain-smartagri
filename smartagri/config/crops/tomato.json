@@ -1,0 +1,97 @@
+{
+    "name": "Tomato",
+    "scientific_name": "Solanum lycopersicum",
+    "stages": {
+        "seedling": {
+            "temperature": {
+                "min": 20.0,
+                "max": 28.0,
+                "target": 24.0
+            },
+            "humidity": {
+                "min": 60.0,
+                "max": 75.0,
+                "target": 68.0
+            },
+            "soil_moisture": {
+                "min": 35.0,
+                "max": 70.0,
+                "target": 50.0
+            },
+            "light": {
+                "min": 5000.0,
+                "max": 15000.0,
+                "target": 9000.0
+            }
+        },
+
+        "vegetative": {
+            "temperature": {
+                "min": 20.0,
+                "max": 30.0,
+                "target": 25.0
+            },
+            "humidity": {
+                "min": 55.0,
+                "max": 75.0,
+                "target": 65.0
+            },
+            "soil_moisture": {
+                "min": 35.0,
+                "max": 70.0,
+                "target": 50.0
+            },
+            "light": {
+                "min": 6000.0,
+                "max": 20000.0,
+                "target": 10000.0
+            }
+        },
+
+        "flowering": {
+            "temperature": {
+                "min": 20.0,
+                "max": 28.0,
+                "target": 24.0
+            },
+            "humidity": {
+                "min": 50.0,
+                "max": 70.0,
+                "target": 60.0
+            },
+            "soil_moisture": {
+                "min": 40.0,
+                "max": 70.0,
+                "target": 55.0
+            },
+            "light": {
+                "min": 7000.0,
+                "max": 22000.0,
+                "target": 12000.0
+            }
+        },
+
+        "fruiting": {
+            "temperature": {
+                "min": 20.0,
+                "max": 28.0,
+                "target": 24.0
+            },
+            "humidity": {
+                "min": 50.0,
+                "max": 70.0,
+                "target": 60.0
+            },
+            "soil_moisture": {
+                "min": 40.0,
+                "max": 75.0,
+                "target": 55.0
+            },
+            "light": {
+                "min": 8000.0,
+                "max": 25000.0,
+                "target": 14000.0
+            }
+        }
+    }
+}

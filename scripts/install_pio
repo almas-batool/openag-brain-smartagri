@@ -1,0 +1,16 @@
+#!/bin/bash
+#type platformio > /dev/null 2>&1 && echo "pio is already installed" && exit
+# We install platformio in a virtualenv, because platformio and rosserial
+# depend on different versions of pyserial.
+sudo pip install virtualenv
+virtualenv ~/pio_env
+source ~/pio_env/bin/activate
+pip install platformio==3.3.0
+# Create symlink to virtualenv pio in global bin
+if [ ! -e /usr/local/bin/pio ]; then
+    sudo ln -s ~/pio_env/bin/pio /usr/local/bin/pio
+fi
+if [ ! -e /usr/local/bin/platformio ]; then
+    sudo ln -s ~/pio_env/bin/platformio /usr/local/bin/platformio
+fi
+platformio platforms install atmelavr

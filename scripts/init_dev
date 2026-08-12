@@ -1,0 +1,91 @@
+#!/bin/bash
+# This script sets up a developer workspace to build openag_brain and its
+# dependencies from source.
+#
+# - Adds ROS package manager source
+# - Installs ROS tools for boostrapping install
+# - Fetches and adds source dependencies to catkin workspace
+#
+# Adapted from these instructions:
+# http://wiki.ros.org/ROSberryPi/Installing%20ROS%20Indigo%20on%20Raspberry%20Pi
+
+# Read the workspace location from arguments. Default to ~/catkin_ws.
+
+# Make sure we're running this from the correct directory
+if [ ! -d ~/catkin_ws/src/openag_brain/ ] ; then
+  echo "Location \"~/catkin_ws/src/openag_brain\" does not exist. openag_brain must be placed in \"~/catkin_ws/src\" for this script to work." && exit 1
+fi
+echo "~~~"
+echo "Setting up development environment..."
+echo "Location: ~/catkin_ws"
+echo "~~~"
+
+set -e
+
+# Give pi dialout privileges.
+# https://github.com/OpenAgInitiative/openag_brain/issues/169
+echo "Give user pi dialout permissions"
+sudo usermod -a -G dialout pi
+
+# Tell apt to read from the ROS package repository
+echo "Add ROS package repository"
+sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu jessie main" > /etc/apt/sources.list.d/ros-latest.list'
+wget -q https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -O - | sudo apt-key add -
+
+# Update apt
+echo "Update apt"
+sudo apt-get update -q
+# sudo apt-get -y upgrade
+
+echo "Install pip and ROS bootstrapping tools"
+sudo apt-get install -y -q python-setuptools
+
+# Install pip and python bootstrapping dependencies
+# We install pip with easy_install because the ARM/Debian apt package
+# `python-pip` is way out of date and causes a version conflict with Requests
+# as of 2017-05
+sudo easy_install pip
+sudo pip install rosdep rosinstall_generator wstool rosinstall
+
+# Install some python dependencies that there aren't ros packages for.
+sudo pip install voluptuous HTTPretty pytest
+
+# Initialize rosdep if it hasn't been already.
+# Checking for the .list file first makes this script idempotent.
+echo "Setup and update rosdep"
+if [ ! -f /etc/ros/rosdep/sources.list.d/20-default.list ]; then
+  sudo rosdep init
+fi
+rosdep update
+
+# Set up ROS and dependencies in workspace with .rosinstall file.
+# http://wiki.ros.org/wstool
+# http://wiki.ros.org/rosinstall
+# If wstool has already been run, merge the rosinstall. Otherwise, init.
+if [ -f ~/catkin_ws/.catkin_workspace ]; then
+  echo "Workspace exists. Merge openag_brain_ros_indigo_deps_wet.rosinstall into existing workspace with wstool."
+  wstool merge -t ~/catkin_ws/src --merge-replace ~/catkin_ws/src/openag_brain/openag_brain_ros_indigo_deps_wet.rosinstall
+  wstool update -t ~/catkin_ws/src --delete-changed-uris
+else
+  echo "Init workspace with wstool"
+  wstool init ~/catkin_ws/src ~/catkin_ws/src/openag_brain/openag_brain_ros_indigo_deps_wet.rosinstall
+fi
+
+# Install binary and Python dependencies for all packages.
+# Walks workspace for `package.xml` files and looks up packages in rosdep
+# sources list. Sources list for rosdep can be found here
+# https://github.com/ros/rosdistro
+# Installable sources are typically apt-get packages or pip packages.
+# http://wiki.ros.org/rosdep
+echo "Installing binary dependencies with rosdep"
+# Install dependency binary deps
+rosdep install --from-paths ~/catkin_ws/src --ignore-src --rosdistro indigo -y -r --os=debian:jessie
+
+# Let pi user access hid relay device without having to be root
+sudo sh -c 'echo SUBSYSTEM=="usb", ATTR{idVendor}=="0416", ATTR{idProduct}=="5020", MODE="0666", GROUP="plugdev" > /etc/udev/rules.d/99-hidrelay.rules'
+
+# Let pi user access gpio without having to be root
+echo SUBSYSTEM=="gpio*", PROGRAM="/bin/sh -c 'chown -R root:gpio /sys/class/gpio && chmod -R 770 /sys/class/gpio; chown -R root:gpio /sys/devices/virtual/gpio && chmod -R 770 /sys/devices/virtual/gpio'"  | sudo tee -a /etc/udev/rules.d/99-com.rules > /dev/null
+sudo usermod -a -G gpio pi
+
+echo "Finished setting up development environment. Ready to build with catkin_make."
